@@ -49,12 +49,14 @@
 ## 📸 Screenshots
 
 ### Terminal Output Analysis
-![Terminal Analysis](screenshots/terminal_analysis.jpg)
+<img width="914" height="326" alt="{A7E8D87D-E2D5-433A-944F-64E02B455FD3}" src="https://github.com/user-attachments/assets/c6d0005f-eddd-419d-9cc2-28047c191951" />
+
 
 *Real-time analysis output showing match processing, data extraction, and statistical calculations in progress*
 
 ### Match Analysis Results  
-![Match Results](screenshots/match_results.jpg)
+<img width="1012" height="981" alt="2100 partidas" src="https://github.com/user-attachments/assets/7bab671a-484b-4c7a-8fb8-31ff927beb42" />
+
 
 *Comprehensive analysis results displaying processed matches, teammate/opponent relationships, and detailed performance statistics across 2,100+ matches*
 
