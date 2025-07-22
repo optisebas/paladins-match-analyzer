@@ -139,7 +139,7 @@ python paladins.py --url https://paladins.guru/profile/9256237-Makoichi
 
 The `config.json` file controls all analysis parameters:
 
-#### **General Settings**
+#### General Settings
 ```
 {
     "general_settings": {
@@ -151,7 +151,7 @@ The `config.json` file controls all analysis parameters:
 }
 ```
 
-#### **CSV Export Options**
+#### CSV Export Options
 ```
 {
     "csv_output_options": {
@@ -163,7 +163,7 @@ The `config.json` file controls all analysis parameters:
 }
 ```
 
-#### **Database Settings**
+#### Database Settings
 ```
 {
     "database_options": {
@@ -174,7 +174,7 @@ The `config.json` file controls all analysis parameters:
 }
 ```
 
-#### **Debug Options**
+#### Debug Options
 ```
 {
     "debugging": {
@@ -197,9 +197,6 @@ The `config.json` file controls all analysis parameters:
 ```
 # Analyze single player
 python paladins.py --url https://paladins.guru/profile/9256237-Makoichi
-
-# Limit analysis to 100 matches (edit config.json)
-"max_matches_to_analyze": 100
 ```
 
 ### Batch Analysis
@@ -391,249 +388,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
   
   🎮 Happy analyzing, Champions!
 
-```
-
-## 📂 **Archivos Faltantes para Completar tu Repositorio**
-
-### **1. requirements.txt**
-```text
-requests>=2.25.1
-pandas>=1.3.0
-beautifulsoup4>=4.9.3
-colorama>=0.4.4
-```
-
-### **2. config.example.json**
-```json
-{
-    "players_to_track": {
-        "YourPlayerName": "YOUR_PALADINSGURU_ID",
-        "ExamplePlayer": "123456789"
-    },
-    "general_settings": {
-        "request_delay_sec": 0.8,
-        "max_matches_to_analyze": null,
-        "max_history_pages_to_scan": 50,
-        "top_n_relations_to_show": 10
-    },
-    "csv_output_options": {
-        "generate_detailed_stats_csv": true,
-        "generate_relations_csv": true,
-        "generate_champ_stats_csv": true,
-        "generate_map_stats_csv": true
-    },
-    "database_options": {
-        "enable_sqlite": true,
-        "db_filename": "paladins_analysis.sqlite",
-        "force_full_reanalysis": false
-    },
-    "debugging": {
-        "log_level": "INFO"
-    },
-    "_comments": {
-        "info": "Configuration file for Paladins Match Analyzer",
-        "players_to_track": "Add players with their Paladins.Guru ID numbers",
-        "request_delay_sec": "Delay between requests to avoid rate limiting",
-        "max_matches_to_analyze": "Set to null for unlimited, or specify number",
-        "log_levels": "DEBUG, INFO, WARNING, ERROR, CRITICAL"
-    }
-}
-```
-
-### **3. .gitignore**
-```
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# Virtual environments
-venv/
-env/
-ENV/
-env.bak/
-venv.bak/
-paladins-env/
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Project specific
-config.json
-*.sqlite
-*.csv
-logs/
-data/
-screenshots/raw/
-
-# Keep example files
-!config.example.json
-!screenshots/terminal_analysis.jpg
-!screenshots/match_results.jpg
-```
-
-### **4. CONTRIBUTING.md**
-```markdown
-# Contributing to Paladins Match Analyzer
-
-Thank you for your interest in contributing! This document provides guidelines for contributing to the project.
-
-## How to Contribute
-
-### 🐛 Reporting Bugs
-- Check if the bug has already been reported
-- Use the issue template
-- Include Python version, OS, and error messages
-- Provide steps to reproduce
-
-### 💡 Suggesting Features
-- Check existing feature requests
-- Explain the use case and benefits
-- Consider implementation complexity
-
-### 🔧 Code Contributions
-
-1. **Fork the repository**
-2. **Create a feature branch**
-   ```
-   git checkout -b feature/your-feature-name
-   ```
-3. **Make your changes**
-4. **Test thoroughly**
-5. **Follow code style guidelines**
-6. **Submit a pull request**
-
-## Development Setup
-
-```
-# Clone your fork
-git clone https://github.com/yourusername/paladins-match-analyzer.git
-cd paladins-match-analyzer
-
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Run tests
-python -m pytest  # If tests exist
-```
-
-## Code Style
-
-- Follow PEP 8
-- Use meaningful variable names
-- Add docstrings to functions
-- Keep functions focused and small
-- Comment complex logic
-
-## Testing
-
-- Test with different player profiles
-- Verify CSV outputs
-- Check database integrity
-- Test error handling
-
-## Questions?
-
-Open an issue or start a discussion for any questions about contributing.
-
----
-
-Thank you for helping improve Paladins Match Analyzer! 🎮
-```
-
-### **5. LICENSE**
-```
-MIT License
-
-Copyright (c) 2025 optisebas
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
-
-## 📋 **Checklist Final - Orden de Subida**
-
-### **1. Archivos Principales**
-- ✅ `README.md` (versión corregida de arriba)
-- ✅ `paladins.py` (tu código principal)
-- ✅ `requirements.txt`
-- ✅ `config.example.json`
-
-### **2. Archivos de Configuración**
-- ✅ `.gitignore`
-- ✅ `LICENSE`
-- ✅ `CONTRIBUTING.md`
-
-### **3. Carpeta Screenshots**
-- ✅ Crear carpeta `screenshots/`
-- ✅ Subir tus capturas renombradas
-
-### **4. Configurar Repositorio**
-- ✅ Agregar Topics: `paladins`, `gaming-analytics`, `python`, `data-analysis`, `web-scraping`
-- ✅ Activar Issues y Discussions
-- ✅ Crear primera Release (v1.0.0)
-
-## 🎯 **Cambios Principales en los Badges**
-
-**Antes (problemático):**
-```markdown
-[![Python 3.7+](https://img.shields.io/badge/python-3.7+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-```
-
-**Ahora (limpio y profesional):**
-```markdown
-![Python](https://img.shields.io/badge/Python-3.7+-blue?style=flat-square&logo=python)
-![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
-![Status](https://img.shields.io/badge/Status-Active-success?style=flat-square)
 ```
