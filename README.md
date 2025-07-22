@@ -1,17 +1,16 @@
-# paladins-match-analyzer
-🎮 Advanced Python tool for analyzing Paladins match data from Paladins.Guru - Track relationships, champion stats, and performance with automated scraping and SQLite persistence
 ```markdown
 # 🎯 Paladins Match Analyzer
 
-<div align="center">
-  <h3>Advanced Match Data Analysis and Player Relationship Tracking for Paladins</h3>
+
+  Advanced Match Data Analysis and Player Relationship Tracking for Paladins
   
   [![Python 3.7+](https://img.shields.io/badge/python-3.7+-blue.svg)](https://www.python.org/downloads/)
   [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
   [![Status: Active](https://img.shields.io/badge/Status-Active-success.svg)]()
+  [![GitHub Release](https://img.shields.io/github/v/release/optisebas/paladins-match-analyzer)](https://github.com/optisebas/paladins-match-analyzer/releases)
   
   A comprehensive tool for analyzing Paladins match data, tracking player relationships, and generating detailed statistics from Paladins.Guru
-</div>
+
 
 ## 📋 Table of Contents
 
@@ -23,6 +22,7 @@
 - [Usage Examples](#-usage-examples)
 - [Output Files](#-output-files)
 - [Command Reference](#-command-reference)
+- [Troubleshooting](#-troubleshooting)
 - [Contributing](#-contributing)
 - [License](#-license)
 
@@ -48,16 +48,16 @@
 - **Relationship Mapping**: Detailed teammate and opponent interaction analysis
 
 ## 📸 Screenshots
-<img width="914" height="326" alt="{A7E8D87D-E2D5-433A-944F-64E02B455FD3}" src="https://github.com/user-attachments/assets/19332299-e34c-41ea-b2e6-103d80cd7f91" />
 
 ### Terminal Output Analysis
 
-*Real-time analysis output showing match processing and player statistics*
+
+*Real-time analysis output showing match processing, data extraction, and statistical calculations in progress*
 
 ### Match Analysis Results  
-<img width="1012" height="981" alt="2100 partidas" src="https://github.com/user-attachments/assets/8a3b51ca-2bf5-455c-83ab-855971a8c881" />
 
-*Comprehensive analysis results displaying processed matches and relationship data*
+
+*Comprehensive analysis results displaying processed matches, teammate/opponent relationships, and detailed performance statistics across 2,100+ matches*
 
 ## 🚀 Installation
 
@@ -68,9 +68,9 @@
 
 ### Windows Installation
 
-```cmd
+```
 # Clone repository
-git clone https://github.com/yourusername/paladins-match-analyzer.git
+git clone https://github.com/optisebas/paladins-match-analyzer.git
 cd paladins-match-analyzer
 
 # Install dependencies
@@ -82,9 +82,9 @@ python paladins.py --url https://paladins.guru/profile/123456-PlayerName
 
 ### macOS Installation
 
-```bash
+```
 # Clone repository
-git clone https://github.com/yourusername/paladins-match-analyzer.git
+git clone https://github.com/optisebas/paladins-match-analyzer.git
 cd paladins-match-analyzer
 
 # Install dependencies
@@ -96,9 +96,9 @@ python3 paladins.py --url https://paladins.guru/profile/123456-PlayerName
 
 ### Linux Installation
 
-```bash
+```
 # Clone repository
-git clone https://github.com/yourusername/paladins-match-analyzer.git
+git clone https://github.com/optisebas/paladins-match-analyzer.git
 cd paladins-match-analyzer
 
 # Install dependencies (Ubuntu/Debian)
@@ -113,18 +113,18 @@ python3 paladins.py --url https://paladins.guru/profile/123456-PlayerName
 ## ⚡ Quick Start
 
 ### Method 1: Direct URL Analysis (Recommended)
-```bash
+```
 python paladins.py --url https://paladins.guru/profile/9256237-Makoichi
 ```
 
 ### Method 2: Configuration File
 1. **Copy example config:**
-   ```bash
+   ```
    cp config.example.json config.json
    ```
 
 2. **Edit config.json:**
-   ```json
+   ```
    {
        "players_to_track": {
            "PlayerName": "123456789"
@@ -133,7 +133,7 @@ python paladins.py --url https://paladins.guru/profile/9256237-Makoichi
    ```
 
 3. **Run analysis:**
-   ```bash
+   ```
    python paladins.py
    ```
 
@@ -144,7 +144,7 @@ python paladins.py --url https://paladins.guru/profile/9256237-Makoichi
 The `config.json` file controls all analysis parameters:
 
 #### **General Settings**
-```json
+```
 {
     "general_settings": {
         "request_delay_sec": 0.8,           // Delay between requests (avoid rate limits)
@@ -156,7 +156,7 @@ The `config.json` file controls all analysis parameters:
 ```
 
 #### **CSV Export Options**
-```json
+```
 {
     "csv_output_options": {
         "generate_detailed_stats_csv": true,     // Generate detailed match stats
@@ -168,7 +168,7 @@ The `config.json` file controls all analysis parameters:
 ```
 
 #### **Database Settings**
-```json
+```
 {
     "database_options": {
         "enable_sqlite": true,                   // Use SQLite for data persistence
@@ -179,7 +179,7 @@ The `config.json` file controls all analysis parameters:
 ```
 
 #### **Debug Options**
-```json
+```
 {
     "debugging": {
         "log_level": "INFO"                      // DEBUG, INFO, WARNING, ERROR, CRITICAL
@@ -187,23 +187,18 @@ The `config.json` file controls all analysis parameters:
 }
 ```
 
-### 🔧 Quick Configuration Commands
+### 🔧 Configuration Examples
 
-```bash
-# Create config from template
-cp config.example.json config.json
-
-# Add player to config (replace with your data)
-# Edit config.json and update "players_to_track" section
-
-# Test configuration
-python paladins.py --help
-```
+| Setting | Conservative | Balanced | Aggressive |
+|---------|--------------|----------|------------|
+| `request_delay_sec` | 1.2 | 0.8 | 0.5 |
+| `max_matches_to_analyze` | 500 | null | null |
+| `max_history_pages_to_scan` | 25 | 50 | 100 |
 
 ## 💡 Usage Examples
 
 ### Basic Analysis
-```bash
+```
 # Analyze single player
 python paladins.py --url https://paladins.guru/profile/9256237-Makoichi
 
@@ -212,7 +207,7 @@ python paladins.py --url https://paladins.guru/profile/9256237-Makoichi
 ```
 
 ### Batch Analysis
-```bash
+```
 # Configure multiple players in config.json
 {
     "players_to_track": {
@@ -227,7 +222,7 @@ python paladins.py
 ```
 
 ### Advanced Options
-```bash
+```
 # Force re-analysis (ignore database cache)
 # Set in config.json: "force_full_reanalysis": true
 
@@ -273,7 +268,7 @@ python paladins.py
 ## 📖 Command Reference
 
 ### Command Line Arguments
-```bash
+```
 python paladins.py [OPTIONS]
 
 Options:
@@ -286,8 +281,38 @@ Options:
 2. Search for player name
 3. Copy profile URL (format: `https://paladins.guru/profile/ID-Name`)
 
-### Troubleshooting Commands
-```bash
+## 🔧 Troubleshooting
+
+### Common Issues
+
+**❌ "No match URLs found"**
+- Verify the Paladins.Guru profile URL is correct
+- Check that the profile is public and has match history
+- Ensure you're using the correct Player ID format
+
+**❌ "HTTP 429: Too Many Requests"**  
+- Increase `request_delay_sec` in config.json to 1.0 or higher
+- The tool automatically handles rate limiting, but be patient
+- Consider reducing `max_history_pages_to_scan`
+
+**❌ "SQLite database locked"**
+- Close any other instances of the tool
+- Check file permissions in the project directory
+- Try deleting the `.sqlite` file and re-running
+
+**❌ "Module not found" errors**
+- Ensure all dependencies are installed: `pip install -r requirements.txt`
+- Use a virtual environment to avoid conflicts
+- Verify Python version is 3.7 or higher
+
+**❌ "Connection timeout" errors**
+- Check your internet connection
+- Increase `request_delay_sec` to reduce server load
+- Verify Paladins.Guru is accessible from your location
+
+### Performance Optimization
+
+```
 # Check Python version
 python --version
 
@@ -298,14 +323,25 @@ pip list
 python paladins.py --url https://paladins.guru/profile/123456-TestPlayer
 ```
 
+### Debug Mode
+Set `"log_level": "DEBUG"` in config.json for detailed output:
+```
+{
+    "debugging": {
+        "log_level": "DEBUG"
+    }
+}
+```
+
 ## 🤝 Contributing
 
-Contributions welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
 
 ### Quick Development Setup
-```bash
+```
 # Fork and clone
-git clone https://github.com/yourusername/paladins-match-analyzer.git
+git clone https://github.com/optisebas/paladins-match-analyzer.git
+cd paladins-match-analyzer
 
 # Create virtual environment
 python -m venv venv
@@ -313,74 +349,67 @@ source venv/bin/activate  # Windows: venv\Scripts\activate
 
 # Install in development mode
 pip install -e .
+
+# Run tests (if available)
+python -m pytest
 ```
+
+### Development Guidelines
+- Follow PEP 8 style guidelines
+- Add docstrings to new functions
+- Update documentation for new features
+- Test changes with different player profiles
 
 ## 📄 License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🔧 System Requirements
+### MIT License Summary
+- ✅ **Commercial use** - Use in commercial applications
+- ✅ **Modification** - Modify and distribute changes
+- ✅ **Distribution** - Share the software
+- ✅ **Private use** - Use privately
+- ❗ **Limitation** - No liability or warranty
 
-| OS | Python | Dependencies |
-|----|--------|-------------|
-| Windows 10+ | 3.7+ | pip |
-| macOS 10.14+ | 3.7+ | pip3 |
-| Linux | 3.7+ | python3-pip |
+## 🙏 Acknowledgments
+
+- **Paladins.Guru** for providing comprehensive match data
+- **Hi-Rez Studios** for creating Paladins
+- **Python Community** for excellent libraries (requests, pandas, BeautifulSoup)
+- **Gaming Analytics Community** for inspiration and feedback
+
+## 📊 System Requirements
+
+| Component | Minimum | Recommended |
+|-----------|---------|-------------|
+| **OS** | Windows 10, macOS 10.14, Ubuntu 18.04 | Latest versions |
+| **Python** | 3.7+ | 3.9+ |
+| **RAM** | 512 MB | 2 GB+ |
+| **Storage** | 50 MB | 500 MB+ |
+| **Internet** | Stable connection | Broadband |
+
+## 📞 Support & Contact
+
+- 🐛 **Bug Reports**: [Open an issue](https://github.com/optisebas/paladins-match-analyzer/issues)
+- 💡 **Feature Requests**: [Start a discussion](https://github.com/optisebas/paladins-match-analyzer/discussions)
+- 📧 **Contact**: [optisebasgym@gmail.com]
+- 🌍 **Location**: Colombia, Santander 
+
+## 🚀 Roadmap
+
+- [ ] **GUI Interface** - Desktop application with tkinter
+- [ ] **Real-time Monitoring** - Live match tracking
+- [ ] **Advanced Visualizations** - Charts and graphs
+- [ ] **API Integration** - Direct Hi-Rez API support
+- [ ] **Multi-game Support** - Extend to other Hi-Rez games
 
 ---
 
-<div align="center">
+
   Made with ❤️ for the Paladins community
   
   ⭐ **Star this repo if you find it helpful!**
-</div>
-```
+  
+  🎮 **Happy analyzing, Champions!**
 
----
-
-### 2. requirements.txt
-```text
-requests>=2.25.1
-pandas>=1.3.0
-beautifulsoup4>=4.9.3
-colorama>=0.4.4
-```
-
----
-
-### 3. config.example.json
-```json
-{
-    "players_to_track": {
-        "YourPlayerName": "YOUR_PALADINSGURU_ID",
-        "Player2": "123456789"
-    },
-    "general_settings": {
-        "request_delay_sec": 0.8,
-        "max_matches_to_analyze": null,
-        "max_history_pages_to_scan": 50,
-        "top_n_relations_to_show": 10
-    },
-    "csv_output_options": {
-        "generate_detailed_stats_csv": true,
-        "generate_relations_csv": true,
-        "generate_champ_stats_csv": true,
-        "generate_map_stats_csv": true
-    },
-    "database_options": {
-        "enable_sqlite": true,
-        "db_filename": "paladins_analysis.sqlite",
-        "force_full_reanalysis": false
-    },
-    "debugging": {
-        "log_level": "INFO"
-    },
-    "configuration_comments": {
-        "_comment1": "Add players to 'players_to_track' with their Paladins.Guru ID numbers",
-        "_comment2": "Set 'max_matches_to_analyze' to null for unlimited analysis, or specify a number",
-        "_comment3": "Increase 'request_delay_sec' if you encounter rate limiting issues",
-        "_comment4": "Set 'force_full_reanalysis' to true to ignore database and reprocess all matches",
-        "_comment5": "Valid log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL"
-    }
-}
 ```
