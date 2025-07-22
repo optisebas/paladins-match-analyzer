@@ -1,5 +1,6 @@
 ```markdown
 # 🎯 Paladins Match Analyzer
+<img width="914" height="326" alt="{A7E8D87D-E2D5-433A-944F-64E02B455FD3}" src="https://github.com/user-attachments/assets/53e029d2-4cca-42a7-a2e6-63631702bd2d" />
 
 
   Advanced Match Data Analysis and Player Relationship Tracking for Paladins
