@@ -105,6 +105,10 @@ def init_sqlite():
     global DB_CONN, DB_CURSOR
     if DB_CFG.get("enable_sqlite"):
         db_name = DB_CFG.get("db_filename", "paladins_analysis.sqlite")
+        # Sanitize filename to prevent path traversal
+        db_name = os.path.basename(db_name)
+        if not db_name:
+            db_name = "paladins_analysis.sqlite"
         try:
             DB_CONN = sqlite3.connect(db_name); DB_CURSOR = DB_CONN.cursor()
             logging.info(f"{Fore.GREEN}Connected to SQLite database: {db_name}{Style.RESET_ALL}")
@@ -317,6 +321,11 @@ def analyze_single_match(match_url, tracked_player_id, tracked_player_name):
     return final_player_list, tracked_player_info['team_idx'], tracked_player_info['won']
 
 def process_player_analysis(main_player_name, main_player_id):
+    # Sanitize player name for use in filenames
+    main_player_name = os.path.basename(main_player_name)
+    if not main_player_name:
+        main_player_name = "Unknown_Player"
+
     logging.info(f"{Fore.MAGENTA}=== Starting analysis for: {main_player_name} (ID: {main_player_id}) ==={Style.RESET_ALL}")
     match_urls = download_match_links_for_player(main_player_name, main_player_id)
     if not match_urls: logging.error(f"{Fore.RED}No match URLs found for {main_player_name}.{Style.RESET_ALL}"); return
