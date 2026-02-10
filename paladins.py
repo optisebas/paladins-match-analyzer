@@ -1,5 +1,5 @@
-# PaladinsGuru Deep Match Analyzer - Iteración 5.3
-import requests
+# PaladinsGuru Deep Match Analyzer - Iteration 5.3
+from curl_cffi import requests
 import pandas as pd
 from bs4 import BeautifulSoup
 from colorama import Fore, Style, init as colorama_init
@@ -7,26 +7,33 @@ from collections import defaultdict
 import os
 import re
 import time
-from datetime import datetime, timedelta 
+from datetime import datetime, timedelta
 import json
-import sqlite3 
-import logging 
+import sqlite3
+import logging
 import argparse
 
 colorama_init(autoreset=True)
 
-# --- CONFIGURACIÓN GLOBAL CARGADA DESDE JSON ---
+# --- GLOBAL CONFIGURATION LOADED FROM JSON ---
 CONFIG_FILE = "config.json"
 DEFAULT_CONFIG = {
     "players_to_track": {},
-    "general_settings": { "request_delay_sec": 0.8, "max_matches_to_analyze": None, "max_history_pages_to_scan": 50, "top_n_relations_to_show": 10 },
+    "general_settings": {
+        "request_delay_sec": 0.8,
+        "max_matches_to_analyze": None,
+        "max_history_pages_to_scan": 50,
+        "top_n_relations_to_show": 10,
+        "analyze_champion_stats": True,
+        "analyze_map_stats": True
+    },
     "csv_output_options": { "generate_detailed_stats_csv": True, "generate_relations_csv": True, "generate_champ_stats_csv": True, "generate_map_stats_csv": True },
     "database_options": { "enable_sqlite": True, "db_filename": "paladins_analysis.sqlite", "force_full_reanalysis": False },
     "debugging": { "log_level": "INFO" }
 }
 
 def load_config():
-    config = DEFAULT_CONFIG.copy(); 
+    config = DEFAULT_CONFIG.copy();
     if os.path.exists(CONFIG_FILE):
         with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
             try:
@@ -42,16 +49,13 @@ def load_config():
 
 config = load_config()
 
-# --- CONFIGURACIÓN DE LOGGING ---
+# --- LOGGING CONFIGURATION ---
 log_level_str = config.get("debugging", {}).get("log_level", "INFO").upper()
 numeric_log_level = getattr(logging, log_level_str, logging.INFO)
 log_format = '%(asctime)s - %(levelname)s - %(message)s'
 logging.basicConfig(level=numeric_log_level, format=log_format, datefmt='%Y-%m-%d %H:%M:%S')
-if numeric_log_level > logging.DEBUG:
-    logging.getLogger("requests").setLevel(logging.WARNING)
-    logging.getLogger("urllib3").setLevel(logging.WARNING)
 
-# --- ACCESO A VALORES DE CONFIGURACIÓN ---
+# --- ACCESS TO CONFIGURATION VALUES ---
 GENERAL_CFG = config.get("general_settings", DEFAULT_CONFIG["general_settings"])
 CSV_CFG = config.get("csv_output_options", DEFAULT_CONFIG["csv_output_options"])
 DB_CFG = config.get("database_options", DEFAULT_CONFIG["database_options"])
@@ -60,9 +64,10 @@ MAX_MATCHES_PER_PLAYER = GENERAL_CFG.get("max_matches_to_analyze", None)
 MAX_PAGES_TO_SCAN_HISTORY = GENERAL_CFG.get("max_history_pages_to_scan", 50)
 TOP_N_RELATIONS = GENERAL_CFG.get("top_n_relations_to_show", 10)
 
-# --- CONSTANTES GLOBALES Y SELECTORES HTML ---
+# --- GLOBAL CONSTANTS AND HTML SELECTORS ---
 MATCH_BASE_URL = "https://paladins.guru"
-HEADERS = { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36' }
+# User-Agent is handled by impersonate="chrome120"
+HEADERS = {}
 PROFILE_URL_TEMPLATE = "https://paladins.guru/profile/{id}-{name}/matches"
 PROFILE_MATCH_LINK_SELECTOR = "a[href^='/match/']"
 PAGINATION_UL_SELECTOR = "ul.pagination"
@@ -71,10 +76,10 @@ PLAYER_ROW_SELECTOR = "div.row.match-table__row"
 PLAYER_INFO_CONTAINER_SELECTOR = "div.row__player"
 PLAYER_NAME_SELECTOR = "a.row__player__name"
 PLAYER_CHAMP_IMG_SELECTOR = "img.row__player__img"
-MAP_NAME_SELECTOR = "div.match-header__map-name, span.match-title__map, div.map-name" 
-DATETIME_AGO_SELECTOR = "div.match-header__time span, span.timeago, time.timeago" 
+MAP_NAME_SELECTOR = "div.match-header__map-name, span.match-title__map, div.map-name"
+DATETIME_AGO_SELECTOR = "div.match-header__time span, span.timeago, time.timeago"
 
-# --- LÓGICA DE BASE DE DATOS SQLITE ---
+# --- SQLITE DATABASE LOGIC ---
 DB_CONN = None; DB_CURSOR = None
 def init_sqlite():
     global DB_CONN, DB_CURSOR
@@ -108,7 +113,10 @@ def is_match_in_sqlite(match_id):
 def safe_get_request(url, retries=3, delay_on_retry=10):
     for attempt in range(retries):
         try:
-            response = requests.get(url, headers=HEADERS, timeout=25); response.raise_for_status(); return response
+            # Using impersonate="chrome120" to bypass potential blocks
+            response = requests.get(url, headers=HEADERS, timeout=25, impersonate="chrome120")
+            response.raise_for_status()
+            return response
         except requests.exceptions.HTTPError as e:
             if e.response.status_code == 429: logging.warning(f"{Fore.YELLOW}HTTP 429: Too Many Requests. Waiting {delay_on_retry*(attempt+1)}s...{Style.RESET_ALL}"); time.sleep(delay_on_retry*(attempt+1))
             else: logging.error(f"{Fore.RED}HTTP {e.response.status_code}: {url}. Will not retry.{Style.RESET_ALL}"); return None
@@ -132,8 +140,8 @@ def parse_relative_time(time_str):
         if "hour" in time_str: return now - timedelta(hours=val)
         if "day" in time_str: return now - timedelta(days=val)
         if "week" in time_str: return now - timedelta(weeks=val)
-        if "month" in time_str: return now - timedelta(days=val * 30) 
-        if "year" in time_str: return now - timedelta(days=val * 365) 
+        if "month" in time_str: return now - timedelta(days=val * 30)
+        if "year" in time_str: return now - timedelta(days=val * 365)
     except Exception as e: logging.error(f"{Fore.RED}Error parsing relative time '{time_str}': {e}{Style.RESET_ALL}"); return None
     return None
 def extract_info_from_url(url):
@@ -191,7 +199,7 @@ def download_match_links_for_player(player_name, player_id):
                 if full_url not in all_urls: all_urls.add(full_url); new_links_count += 1
         if new_links_count == 0 and current_page > 1: logging.info(f"{Fore.YELLOW}No new match links on page {current_page}. Ending pagination.{Style.RESET_ALL}"); break
         pagination_ul = soup.select_one(PAGINATION_UL_SELECTOR)
-        if not pagination_ul: logging.info(f"{Fore.YELLOW}No pagination block found on page {current_page}. Assuming end of history.{Style.RESET_ALL}"); break 
+        if not pagination_ul: logging.info(f"{Fore.YELLOW}No pagination block found on page {current_page}. Assuming end of history.{Style.RESET_ALL}"); break
         next_li = next((li for li in reversed(pagination_ul.select("li.page-item")) if li.select_one("a") and "next" in li.select_one("a").text.lower()), None)
         if next_li and 'disabled' not in next_li.get('class', []): current_page += 1; time.sleep(REQUEST_DELAY/2)
         else: logging.info(f"{Fore.YELLOW}'Next' link not available. Pagination finished at page {current_page}.{Style.RESET_ALL}"); break
@@ -202,7 +210,7 @@ def download_match_links_for_player(player_name, player_id):
 def analyze_single_match(match_url, tracked_player_id, tracked_player_name):
     match_id = match_url.split("/")[-1]
     if DB_CFG.get("enable_sqlite") and not DB_CFG.get("force_full_reanalysis") and is_match_in_sqlite(match_id):
-        logging.info(f"{Fore.YELLOW}Match {match_id} already in SQLite. Skipping.{Style.RESET_ALL}"); return [], None, False 
+        logging.info(f"{Fore.YELLOW}Match {match_id} already in SQLite. Skipping.{Style.RESET_ALL}"); return [], None, False
     logging.info(f"{Fore.BLUE}Analyzing from web: {match_url}{Style.RESET_ALL}")
     response = safe_get_request(match_url)
     if not response: return [], None, False
@@ -210,18 +218,18 @@ def analyze_single_match(match_url, tracked_player_id, tracked_player_name):
     map_name = soup.select_one(MAP_NAME_SELECTOR).text.strip() if soup.select_one(MAP_NAME_SELECTOR) else "Unknown Map"
     dt_el = soup.select_one(DATETIME_AGO_SELECTOR); match_dt = parse_relative_time(dt_el.text.strip()) if dt_el else None
     if not match_dt:
-        time_tag = soup.select_one("time[datetime]"); 
-        if time_tag and time_tag.get('datetime'): 
+        time_tag = soup.select_one("time[datetime]");
+        if time_tag and time_tag.get('datetime'):
             try: match_dt = datetime.fromisoformat(time_tag['datetime'].replace('Z','+00:00'))
             except: logging.debug(f"Could not parse ISO datetime: {time_tag['datetime']}")
-    
+
     stats_section = soup.select_one(MATCH_STATS_SECTION_SELECTOR)
     if not stats_section:
         logging.error(f"{Fore.RED}Could not find stats section in {match_url}.{Style.RESET_ALL}"); return [],None,False
-    
+
     all_tables = stats_section.select("div.match-table")
     players_data_map = defaultdict(dict)
-    
+
     for table in all_tables:
         header_text = table.select_one(".match-table__header").get_text().lower() if table.select_one(".match-table__header") else ""
         is_win_table = 'win' in table.get('class', [])
@@ -235,7 +243,7 @@ def analyze_single_match(match_url, tracked_player_id, tracked_player_name):
                 if 'WonMatch' not in players_data_map[player_key]:
                     players_data_map[player_key]['WonMatch'] = is_win_table
                     players_data_map[player_key]['TeamIdx'] = 1 if is_win_table else 0
-    
+
     final_player_list = []
     tracked_player_info = {'team_idx': None, 'won': False}
     for key, data in players_data_map.items():
@@ -253,7 +261,7 @@ def analyze_single_match(match_url, tracked_player_id, tracked_player_name):
         if final_data['PlayerID'] == tracked_player_id or final_data['PlayerName'].lower() == tracked_player_name.lower():
             tracked_player_info['team_idx'] = final_data['TeamIdx']
             tracked_player_info['won'] = final_data['WonMatch']
-    
+
     if tracked_player_info['team_idx'] is None:
         logging.warning(f"{Fore.YELLOW}Tracked player '{tracked_player_name}' (ID: {tracked_player_id}) not found in match data for {match_url}{Style.RESET_ALL}")
 
@@ -264,7 +272,7 @@ def process_player_analysis(main_player_name, main_player_id):
     logging.info(f"{Fore.MAGENTA}=== Starting analysis for: {main_player_name} (ID: {main_player_id}) ==={Style.RESET_ALL}")
     match_urls = download_match_links_for_player(main_player_name, main_player_id)
     if not match_urls: logging.error(f"{Fore.RED}No match URLs found for {main_player_name}.{Style.RESET_ALL}"); return
-    
+
     all_stats_list, relationships = [], defaultdict(lambda: {'name':'Unknown','with_games':0,'with_wins':0,'vs_games':0,'vs_wins':0,'vs_losses':0})
     wins, matches_found = 0, 0
 
@@ -273,7 +281,7 @@ def process_player_analysis(main_player_name, main_player_id):
         match_data, team_idx, won_match = analyze_single_match(url, main_player_id, main_player_name)
         if not match_data and team_idx is None: logging.info(f"{Fore.YELLOW}Match skipped (already processed).{Style.RESET_ALL}"); time.sleep(0.1); continue
         if not match_data: logging.warning(f"{Fore.YELLOW}No player data returned for {url}.{Style.RESET_ALL}"); time.sleep(REQUEST_DELAY); continue
-        
+
         all_stats_list.extend(match_data)
         if team_idx is not None:
             matches_found+=1; wins+=1 if won_match else 0
@@ -284,11 +292,11 @@ def process_player_analysis(main_player_name, main_player_id):
                 if p.get('TeamIdx')==team_idx: relationships[other_pid]['with_games']+=1; relationships[other_pid]['with_wins']+=1 if won_match else 0
                 else: relationships[other_pid]['vs_games']+=1; relationships[other_pid]['vs_wins']+=1 if won_match else 0; relationships[other_pid]['vs_losses']+=0 if won_match else 1
         time.sleep(REQUEST_DELAY)
-    
+
     if not all_stats_list: logging.warning(f"{Fore.YELLOW}No new matches were analyzed. CSV/console reports will be empty for this run.{Style.RESET_ALL}"); return
-    
+
     df_run_stats = pd.DataFrame(all_stats_list)
-    
+
     if CSV_CFG.get("generate_detailed_stats_csv") and not df_run_stats.empty:
         cols_order=['MatchID','PlayerName','PlayerID','Champion','MapName','MatchDateTime','TeamIdx','WonMatch','Level','Kills','Deaths','Assists','KDA','Credits','CPM','DamageDealt','DamageTaken','Shielding','Healing']
         cols_use=[c for c in cols_order if c in df_run_stats.columns]; df_out=df_run_stats[cols_use] if cols_use and not df_run_stats.empty else df_run_stats
@@ -300,19 +308,19 @@ def process_player_analysis(main_player_name, main_player_id):
         for pid, d in relationships.items():
             rel_list.append({'OtherPlayerID':pid, 'OtherPlayerName':d['name'],'PlayedWith_Games':d['with_games'], 'With_Wins':d['with_wins'], 'With_Losses':d['with_games'] - d['with_wins'],'PlayedWith_WinRate (%)':(d['with_wins']/d['with_games']*100) if d['with_games']>0 else 0,'PlayedVs_Games':d['vs_games'], 'MainPlayer_Wins_Vs':d['vs_wins'], 'MainPlayer_Losses_Vs':d['vs_losses'],'WinRateVs_ForMainPlayer (%)':(d['vs_wins']/d['vs_games']*100) if d['vs_games']>0 else 0,'TotalInteractions':d['with_games']+d['vs_games']})
         if rel_list: df_rels=pd.DataFrame(rel_list).sort_values(by=['TotalInteractions','PlayedWith_Games'],ascending=[False,False])
-    if CSV_CFG.get("generate_relations_csv"): 
+    if CSV_CFG.get("generate_relations_csv"):
         df_rels.to_csv(f"relations_{main_player_name.replace(' ', '_')}.csv",index=False,encoding='utf-8-sig')
         logging.info(f"{Fore.GREEN}Relationship stats for this run saved.{Style.RESET_ALL}" if not df_rels.empty else f"{Fore.YELLOW}Relationship stats file (empty) saved.{Style.RESET_ALL}")
 
-    # --- Resúmenes en Consola y CSVs adicionales ---
+    # --- Console Summaries and Additional CSVs ---
     if not df_run_stats.empty:
         df_player = df_run_stats[df_run_stats['PlayerID']==str(main_player_id)].copy()
         if not df_player.empty:
-            # Stats por Campeón
-            if GENERAL_CFG.get("analizar_estadisticas_por_campeon"):
+            # Stats per Champion
+            if GENERAL_CFG.get("analyze_champion_stats"):
                 logging.info(f"{Fore.CYAN}--- CHAMPION STATS FOR {main_player_name.upper()} (this run) ---{Style.RESET_ALL}")
                 num_cols=['Level','Kills','Deaths','Assists','KDA','Credits','CPM','DamageDealt','DamageTaken','Shielding','Healing','WonMatch']
-                for c in num_cols: 
+                for c in num_cols:
                     if c in df_player.columns:df_player.loc[:,c]=pd.to_numeric(df_player[c],errors='coerce')
                 if 'WonMatch' in df_player.columns:df_player.loc[:,'Wins']=df_player['WonMatch'].astype(int)
                 stats_ch=df_player.groupby('Champion').agg(P=('MatchID','nunique'),V=('Wins','sum'),K=('Kills','mean'),D=('Deaths','mean'),A=('Assists','mean'),KDA_avg=('KDA','mean'),Dmg=('DamageDealt','mean'),H=('Healing','mean'),S=('Shielding','mean'),L=('Level','mean')).sort_values(by='P',ascending=False)
@@ -322,9 +330,9 @@ def process_player_analysis(main_player_name, main_player_id):
                     f_cols_ch=[c for c in cols_d_ch if c in stats_ch.columns]; f_fmt_ch={k:v for k,v in cols_d_ch.items() if k in f_cols_ch and v is not None}
                     print(stats_ch[f_cols_ch].head(TOP_N_RELATIONS).to_string(formatters=f_fmt_ch if f_fmt_ch else None))
                     if CSV_CFG.get("generate_champ_stats_csv"): stats_ch[f_cols_ch].to_csv(f"champ_stats_{main_player_name.replace(' ','_')}.csv",encoding='utf-8-sig'); logging.info(f"{Fore.GREEN}Champion stats for this run saved.{Style.RESET_ALL}")
-            
-            # Stats por Mapa
-            if GENERAL_CFG.get("analizar_estadisticas_por_mapa") and 'MapName' in df_player.columns and df_player['MapName'].nunique()>1 and df_player['MapName'].mode().iloc[0]!="Unknown Map":
+
+            # Stats per Map
+            if GENERAL_CFG.get("analyze_map_stats") and 'MapName' in df_player.columns and df_player['MapName'].nunique()>1 and df_player['MapName'].mode().iloc[0]!="Unknown Map":
                 logging.info(f"{Fore.CYAN}--- MAP STATS FOR {main_player_name.upper()} (this run) ---{Style.RESET_ALL}")
                 if 'WonMatch' in df_player.columns:df_player.loc[:,'WinsMap']=df_player['WonMatch'].astype(int)
                 stats_map=df_player.groupby('MapName').agg(P=('MatchID','nunique'),V=('WinsMap','sum'),KDA_avg=('KDA','mean'),Dmg=('DamageDealt','mean'),H=('Healing','mean')).sort_values(by='P',ascending=False)
@@ -335,21 +343,21 @@ def process_player_analysis(main_player_name, main_player_id):
                     print(stats_map[f_cols_map].head(TOP_N_RELATIONS).to_string(formatters=f_fmt_map if f_fmt_map else None))
                     if CSV_CFG.get("generate_map_stats_csv"): stats_map[f_cols_map].to_csv(f"map_stats_{main_player_name.replace(' ','_')}.csv",encoding='utf-8-sig'); logging.info(f"{Fore.GREEN}Map stats for this run saved.{Style.RESET_ALL}")
 
-    # --- RESÚMENES EN CONSOLA ---
+    # --- CONSOLE SUMMARIES ---
     if not df_rels.empty:
         logging.info(f"{Fore.CYAN}--- RELATIONSHIP SUMMARY FOR {main_player_name.upper()} (this run) ---{Style.RESET_ALL}")
         top_a=df_rels[df_rels['PlayedWith_Games']>0].head(TOP_N_RELATIONS)
-        if not top_a.empty: 
+        if not top_a.empty:
             logging.info(f"{Fore.GREEN}  Most frequent teammates (Top {TOP_N_RELATIONS}):{Style.RESET_ALL}")
             for _,r in top_a.iterrows(): logging.info(f"    - {r['OtherPlayerName']} ({Fore.GREEN}{int(r['With_Wins'])}W{Style.RESET_ALL} - {Fore.RED}{int(r['With_Losses'])}L{Style.RESET_ALL}) | {r['PlayedWith_Games']} games | WR: {r['PlayedWith_WinRate (%)']:.1f}%")
         top_e=df_rels[df_rels['PlayedVs_Games']>0].sort_values(by='PlayedVs_Games',ascending=False).head(TOP_N_RELATIONS)
-        if not top_e.empty: 
+        if not top_e.empty:
             logging.info(f"{Fore.RED}  Most frequent opponents (Top {TOP_N_RELATIONS}):{Style.RESET_ALL}")
             for _,r in top_e.iterrows(): logging.info(f"    - {r['OtherPlayerName']} (Your record: {Fore.GREEN}{int(r['MainPlayer_Wins_Vs'])}W{Style.RESET_ALL} - {Fore.RED}{int(r['MainPlayer_Losses_Vs'])}L{Style.RESET_ALL}) | {r['PlayedVs_Games']} games vs | Your WR: {r['WinRateVs_ForMainPlayer (%)']:.1f}%")
 
     logging.info(f"{Fore.CYAN}--- GLOBAL STATS SUMMARY FOR {main_player_name.upper()} (based on {matches_found} new matches in this run) ---{Style.RESET_ALL}")
     if matches_found > 0:
-        wr=(wins/matches_found*100); 
+        wr=(wins/matches_found*100);
         logging.info(f"{Fore.GREEN}  Matches Analyzed (this run): {matches_found}{Style.RESET_ALL}")
         logging.info(f"{Fore.GREEN}  Victories (this run): {wins} ({wr:.2f}%){Style.RESET_ALL}")
         if not df_run_stats.empty:
@@ -369,7 +377,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Paladins.Guru Match Analyzer.", epilog="Example with URL: python %(prog)s --url https://paladins.guru/profile/123456-PlayerName")
     parser.add_argument("--url", type=str, help="URL of a Paladins.Guru profile to analyze. Overrides 'players_to_track' in config.json.")
     args = parser.parse_args()
-    init_sqlite() 
+    init_sqlite()
     try:
         targets_to_process = {}
         if args.url:

@@ -1,18 +1,20 @@
 {
     "players_to_track": {
-        "YourPlayerName": "YOUR_PALADINSGURU_ID"
+        "Makoichi": "9256237"
     },
     "general_settings": {
-        "request_delay_sec": 0.2,
+        "request_delay_sec": 0.8,
         "max_matches_to_analyze": null,
-        "max_history_pages_to_scan": 150,
-        "top_n_relations_to_show": 20
+        "max_history_pages_to_scan": 50,
+        "top_n_relations_to_show": 10,
+        "analyze_champion_stats": true,
+        "analyze_map_stats": true
     },
     "csv_output_options": {
-        "generate_detailed_stats_csv": false,
+        "generate_detailed_stats_csv": true,
         "generate_relations_csv": true,
-        "generate_champ_stats_csv": false,
-        "generate_map_stats_csv": false
+        "generate_champ_stats_csv": true,
+        "generate_map_stats_csv": true
     },
     "database_options": {
         "enable_sqlite": true,
@@ -21,10 +23,5 @@
     },
     "debugging": {
         "log_level": "INFO"
-    },
-    "configuration_comments": {
-        "_comment1": "Add players to 'players_to_track' or use the --url command-line argument.",
-        "_comment2": "In 'general_settings', 'max_matches_to_analyze' (null=all) and 'max_history_pages_to_scan' (null=all) limit the scan scope.",
-        "_comment3": "In 'database_options', set 'force_full_reanalysis' to true to ignore saved data and re-download everything."
     }
 }
