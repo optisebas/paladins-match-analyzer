@@ -12,6 +12,7 @@ import json
 import sqlite3
 import logging
 import argparse
+import random
 
 colorama_init(autoreset=True)
 
@@ -66,8 +67,27 @@ TOP_N_RELATIONS = GENERAL_CFG.get("top_n_relations_to_show", 10)
 
 # --- GLOBAL CONSTANTS AND HTML SELECTORS ---
 MATCH_BASE_URL = "https://paladins.guru"
-# User-Agent is handled by impersonate="chrome120"
-HEADERS = {}
+
+# Browser Headers to mimic real traffic
+HEADERS = {
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'Referer': 'https://paladins.guru/',
+    'Upgrade-Insecure-Requests': '1',
+    'Sec-Fetch-Dest': 'document',
+    'Sec-Fetch-Mode': 'navigate',
+    'Sec-Fetch-Site': 'same-origin',
+    'Sec-Fetch-User': '?1',
+}
+
+# List of browser impersonations to rotate
+IMPERSONATE_TARGETS = [
+    "chrome120",
+    "chrome110",
+    "edge99",
+    "safari15_5"
+]
+
 PROFILE_URL_TEMPLATE = "https://paladins.guru/profile/{id}-{name}/matches"
 PROFILE_MATCH_LINK_SELECTOR = "a[href^='/match/']"
 PAGINATION_UL_SELECTOR = "ul.pagination"
@@ -111,18 +131,46 @@ def is_match_in_sqlite(match_id):
 
 # --- HELPER FUNCTIONS ---
 def safe_get_request(url, retries=3, delay_on_retry=10):
+    """
+    Performs a GET request with retries, rotating browser impersonation to avoid detection/blocking.
+    Uses increased timeouts to handle slow responses or connection issues.
+    """
     for attempt in range(retries):
         try:
-            # Using impersonate="chrome120" to bypass potential blocks
-            response = requests.get(url, headers=HEADERS, timeout=25, impersonate="chrome120")
+            # Rotate impersonation target for each attempt to reduce chance of blocking
+            impersonate_target = random.choice(IMPERSONATE_TARGETS)
+            logging.debug(f"Attempt {attempt+1}/{retries} using impersonation: {impersonate_target}")
+
+            # Increased timeout to 60 seconds
+            response = requests.get(
+                url,
+                headers=HEADERS,
+                timeout=60,
+                impersonate=impersonate_target
+            )
             response.raise_for_status()
             return response
         except requests.exceptions.HTTPError as e:
-            if e.response.status_code == 429: logging.warning(f"{Fore.YELLOW}HTTP 429: Too Many Requests. Waiting {delay_on_retry*(attempt+1)}s...{Style.RESET_ALL}"); time.sleep(delay_on_retry*(attempt+1))
-            else: logging.error(f"{Fore.RED}HTTP {e.response.status_code}: {url}. Will not retry.{Style.RESET_ALL}"); return None
-        except requests.exceptions.RequestException as e: logging.error(f"{Fore.RED}Network/Connection Error: {e} at {url}{Style.RESET_ALL}")
-        if attempt < retries - 1: logging.warning(f"{Fore.YELLOW}Retrying ({attempt+1}/{retries}) for {url}...{Style.RESET_ALL}"); time.sleep(REQUEST_DELAY * 2)
-    logging.error(f"{Fore.RED}All retries failed for {url}{Style.RESET_ALL}"); return None
+            if e.response.status_code == 429:
+                wait_time = delay_on_retry * (attempt + 1)
+                logging.warning(f"{Fore.YELLOW}HTTP 429: Too Many Requests. Waiting {wait_time}s...{Style.RESET_ALL}")
+                time.sleep(wait_time)
+            else:
+                logging.error(f"{Fore.RED}HTTP {e.response.status_code}: {url}. Will not retry.{Style.RESET_ALL}")
+                return None
+        except requests.exceptions.RequestException as e:
+            # Catch timeouts and other connection errors
+            logging.error(f"{Fore.RED}Network/Connection Error: {e} at {url}{Style.RESET_ALL}")
+
+        # If we are here, an exception occurred (but not a fatal HTTP error)
+        if attempt < retries - 1:
+            wait_time = delay_on_retry * (attempt + 1)
+            logging.warning(f"{Fore.YELLOW}Retrying ({attempt+1}/{retries}) for {url} in {wait_time}s...{Style.RESET_ALL}")
+            time.sleep(wait_time)
+
+    logging.error(f"{Fore.RED}All retries failed for {url}{Style.RESET_ALL}")
+    return None
+
 def extract_player_id_from_href(href):
     if not href: return ""
     match = re.search(r'/profile/(\d+)-', href); return match.group(1) if match else ""
