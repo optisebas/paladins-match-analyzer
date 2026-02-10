@@ -183,13 +183,17 @@ def parse_relative_time(time_str):
     try:
         val_match = re.search(r'(\d+)', time_str)
         val = int(val_match.group(1)) if val_match else 1
-        if "second" in time_str: return now - timedelta(seconds=val)
-        if "minute" in time_str: return now - timedelta(minutes=val)
-        if "hour" in time_str: return now - timedelta(hours=val)
-        if "day" in time_str: return now - timedelta(days=val)
-        if "week" in time_str: return now - timedelta(weeks=val)
-        if "month" in time_str: return now - timedelta(days=val * 30)
-        if "year" in time_str: return now - timedelta(days=val * 365)
+        deltas = {
+            "second": timedelta(seconds=val),
+            "minute": timedelta(minutes=val),
+            "hour":   timedelta(hours=val),
+            "day":    timedelta(days=val),
+            "week":   timedelta(weeks=val),
+            "month":  timedelta(days=val * 30),
+            "year":   timedelta(days=val * 365)
+        }
+        for unit, delta in deltas.items():
+            if unit in time_str: return now - delta
     except Exception as e: logging.error(f"{Fore.RED}Error parsing relative time '{time_str}': {e}{Style.RESET_ALL}"); return None
     return None
 def extract_info_from_url(url):
