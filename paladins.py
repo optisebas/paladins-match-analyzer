@@ -99,6 +99,12 @@ PLAYER_CHAMP_IMG_SELECTOR = "img.row__player__img"
 MAP_NAME_SELECTOR = "div.match-header__map-name, span.match-title__map, div.map-name"
 DATETIME_AGO_SELECTOR = "div.match-header__time span, span.timeago, time.timeago"
 
+# Pre-compiled Regex Patterns for Performance
+RE_PROFILE_ID = re.compile(r'/profile/(\d+)-')
+RE_DIGITS = re.compile(r'(\d+)')
+RE_PROFILE_FULL = re.compile(r'/profile/(\d+)-([^/?]+)')
+RE_MATCH_ID = re.compile(r'/(\d+)$')
+
 # --- SQLITE DATABASE LOGIC ---
 DB_CONN = None; DB_CURSOR = None
 def init_sqlite():
@@ -173,7 +179,7 @@ def safe_get_request(url, retries=3, delay_on_retry=10):
 
 def extract_player_id_from_href(href):
     if not href: return ""
-    match = re.search(r'/profile/(\d+)-', href); return match.group(1) if match else ""
+    match = RE_PROFILE_ID.search(href); return match.group(1) if match else ""
 def parse_stat_value(text_value):
     if not text_value: return 0
     cleaned = text_value.strip().replace(".", "").replace(",", ""); return int(cleaned) if cleaned.isdigit() else 0
@@ -181,7 +187,7 @@ def parse_relative_time(time_str):
     if not time_str or "ago" not in time_str.lower(): return None
     now = datetime.now(); time_str = time_str.lower().replace(" ago", "").strip()
     try:
-        val_match = re.search(r'(\d+)', time_str)
+        val_match = RE_DIGITS.search(time_str)
         val = int(val_match.group(1)) if val_match else 1
         if "second" in time_str: return now - timedelta(seconds=val)
         if "minute" in time_str: return now - timedelta(minutes=val)
@@ -193,7 +199,7 @@ def parse_relative_time(time_str):
     except Exception as e: logging.error(f"{Fore.RED}Error parsing relative time '{time_str}': {e}{Style.RESET_ALL}"); return None
     return None
 def extract_info_from_url(url):
-    match = re.search(r'/profile/(\d+)-([^/?]+)', url)
+    match = RE_PROFILE_FULL.search(url)
     if match:
         player_id, player_name = match.group(1), match.group(2)
         logging.info(f"{Fore.GREEN}Profile URL detected. Analyzing: {player_name} (ID: {player_id}){Style.RESET_ALL}")
@@ -251,7 +257,7 @@ def download_match_links_for_player(player_name, player_id):
         next_li = next((li for li in reversed(pagination_ul.select("li.page-item")) if li.select_one("a") and "next" in li.select_one("a").text.lower()), None)
         if next_li and 'disabled' not in next_li.get('class', []): current_page += 1; time.sleep(REQUEST_DELAY/2)
         else: logging.info(f"{Fore.YELLOW}'Next' link not available. Pagination finished at page {current_page}.{Style.RESET_ALL}"); break
-    urls = list(all_urls); urls.sort(key=lambda u: int(re.search(r'/(\d+)$',u).group(1)) if re.search(r'/(\d+)$',u) else 0, reverse=True)
+    urls = list(all_urls); urls.sort(key=lambda u: int(m.group(1)) if (m := RE_MATCH_ID.search(u)) else 0, reverse=True)
     logging.info(f"{Fore.GREEN}{len(urls)} total unique match links found for {player_name} after scanning history.{Style.RESET_ALL}")
     return urls[:MAX_MATCHES_PER_PLAYER] if MAX_MATCHES_PER_PLAYER is not None else urls
 
